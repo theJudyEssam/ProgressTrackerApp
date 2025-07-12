@@ -1,6 +1,7 @@
 package com.example.progress_tracker
 import android.R.attr.text
 import android.R.id.content
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -62,14 +65,16 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.progress_tracker.ui.theme.ProgressTrackerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
 
 
 
-// this will represent the main screen for the app
+
 @Composable
 fun ProgressApp(modifier: Modifier = Modifier){
-
-
     Column(
         modifier = Modifier.padding(20.dp)
     ){
@@ -79,49 +84,54 @@ fun ProgressApp(modifier: Modifier = Modifier){
 }
 
 
+@SuppressLint("SuspiciousIndentation")  // there was an error that i didnt understand but this fixed it
 @Composable
 fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
-    var userInput by remember { mutableStateOf("") }
+
+    // states from ViewModel
+    val userInput = gameModel.taskInput.collectAsState()
     val showDialog = gameModel.showDialog.collectAsState()
+
 
         Column(
             modifier = Modifier.padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
-
         ){
+
+            Icon(
+                imageVector = Pen, contentDescription = null,
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(16.dp),
+            )
+
             Text(
                 text = "What's on your mind today?",
                 style = MaterialTheme.typography.displayMedium,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .padding(10.dp)
-            )
+                modifier = Modifier.padding(10.dp))
 
             Button(
-                onClick = {
-                    gameModel.DialogTrue()
-//                    Log.d("Dialog", "True")
-                },
+                onClick = { gameModel.DialogTrue() },
                 modifier = Modifier.fillMaxWidth()
+            ){Text("Add new task")}
 
-            ){
-                Text(
-                    text = "Add new task"
-                )
-            }
 
+            // trigger for the dialog prompting new task
             if(showDialog.value){
                 NewTaskDialog(
                     onDismissRequest = {gameModel.DialogFalse()},
-                    onConfirmation = {gameModel.DialogFalse()},
-                    userValue = userInput,
-                    OnValueChange = {userInput = it}
+                    onConfirmation = {
+                        gameModel.addToDo(userInput.value)
+                        gameModel.DialogFalse()},
+                    userValue = userInput.value,
+                    OnValueChange = { newValue -> gameModel.setTaskInput(newValue)}
                 )
             }
         }
 }
 
-//Alert for new section
+//Alert for new task
 @Composable
 fun NewTaskDialog(
     onDismissRequest: () -> Unit,
@@ -130,10 +140,9 @@ fun NewTaskDialog(
     OnValueChange: (String) -> Unit
 ) {
     AlertDialog(
-        title = {
-            Text(text = "Enter your todo")
-        },
+        title = { Text("Enter your todo") },
         text = {
+            //! Major Bug Alert: for some reason the textfield doesnt write
             TextField(
                 value = userValue,
                 onValueChange = OnValueChange
@@ -157,7 +166,7 @@ fun NewTaskDialog(
                     onDismissRequest()
                 }
             ) {
-                Text("Neverind!")
+                Text("Nevermind!")
             }
         }
     )
@@ -166,33 +175,41 @@ fun NewTaskDialog(
 
 // this part will contain the tasks, a LazyColumn of ListItems
 @Composable
-fun TasksList(){
-Column(
-    verticalArrangement = Arrangement.spacedBy(10.dp)
-){
-    TaskItem(taskName = "Task 1 ")
-    TaskItem(taskName = "Task 1 ")
-    TaskItem(taskName = "Task 1 ")
-    TaskItem(taskName = "Task 1 ")
-}
+fun TasksList(gameModel: ProgressViewModel = viewModel()){
+    LazyColumn(
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ){
+        val TaskList = gameModel.taskList
+
+        items(TaskList){ todo ->
+            TaskItem(
+                task = todo
+            )
+        }
+
+
+    }
 }
 
 
 @Composable
 fun TaskItem(modifier: Modifier = Modifier,
-             taskName:String = "Task Item",
+             task: TaskState = TaskState(),
              gameModel: ProgressViewModel = viewModel()
 ){
 
-    var visible by remember {mutableStateOf(false)}
+
+
+    var visible by remember {mutableStateOf(false)} // will change later
+    //val currentStatus = gameModel.status.collectAsState()
+
 
     Card(){
-        Column( modifier = Modifier
-            .padding(12.dp)){
-
+        Column(modifier = Modifier.padding(12.dp))
+        {
             Row(){
                 Text(
-                    text = taskName,
+                    text = task.TaskName,
                     modifier = Modifier
                         .weight(1f),
                     style = MaterialTheme.typography.labelLarge
@@ -201,7 +218,7 @@ fun TaskItem(modifier: Modifier = Modifier,
 
                 Row(verticalAlignment = Alignment.CenterVertically){
                     Text(
-                        text = "Status",
+                        text = DynamicLabel(task),
                         style = MaterialTheme.typography.labelSmall
                     )
 
@@ -249,22 +266,18 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
                         Spacer(modifier = Modifier.weight(1f))
-                        DropDown(modifier = Modifier.weight(1f))
+                        DropDown(modifier = Modifier.weight(1f), task = task)
                     }
 
 
-                    //Status settings of it exists
-                    StatusSettings(status = "Streak")
-
+                    //Status settings if it exists
+                    StatusSettings(
+                        status = task.TaskStatus.Name,
+                        onStreakChange = {newval ->  gameModel.updateStreak(task, newval)},
+                        onProgressChange = {gameModel.updateProgress(task, it)}
+                    )
                 }
-
-
-
             }
-
-
-
-
         }
     }
 }
@@ -274,11 +287,14 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 @Composable
 fun DropDown(modifier: Modifier = Modifier,
-             ) {
+             gameModel: ProgressViewModel = viewModel(),
+             task: TaskState = TaskState()
+){
 
     var mExpanded by remember { mutableStateOf(false) }
-    var Status = listOf("No Status", "Completed", "In Progress", "Streaked")  //UI-purposes, will refactor later
-    var SelectedStatus by remember { mutableStateOf("No Status") }
+   // var Status = listOf("No Status", "Completed", "In Progress", "Streaked")  //UI-purposes, will refactor later
+   //var SelectedStatus by remember { mutableStateOf("No Status") }
+
 
     val icon = if (mExpanded)
         Icons.Filled.KeyboardArrowUp
@@ -298,9 +314,8 @@ fun DropDown(modifier: Modifier = Modifier,
                     .defaultMinSize(minHeight = 28.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val selectedStatus = null
                 Text(
-                    text = SelectedStatus,
+                    text = task.TaskStatus.Name,
                     style = MaterialTheme.typography.labelMedium,
                     color = Color.Black
                 )
@@ -318,16 +333,14 @@ fun DropDown(modifier: Modifier = Modifier,
                 modifier = Modifier
 
             ) {
-                Status.forEach { label ->
+                Status.entries.forEach { status ->
                     DropdownMenuItem(
-                        text = { Text(text = label, style = MaterialTheme.typography.labelMedium)},
+                        text = { Text(text = status.Name, style = MaterialTheme.typography.labelMedium) },
                         onClick = {
-                            SelectedStatus = label
+                            gameModel.setStatus(status, task)
                             mExpanded = false
                         }
                     )
-
-
                 }
             }
 
@@ -340,10 +353,12 @@ fun DropDown(modifier: Modifier = Modifier,
 
 
 @Composable
-fun StatusSettings(modifier: Modifier = Modifier, status:String = "No Status"){
-    var sliderValue by remember {mutableStateOf(50.0f)}
-    var Numericvalue by remember{mutableStateOf(0)}
-
+fun StatusSettings(modifier: Modifier = Modifier,
+                   status:String = "No Status",
+                   task: TaskState = TaskState(),
+                    onProgressChange: (Float) -> Unit,
+                    onStreakChange: (Int) -> Unit
+){
 
     AnimatedVisibility(visible = status == "In Progress") {
         Row(
@@ -352,7 +367,7 @@ fun StatusSettings(modifier: Modifier = Modifier, status:String = "No Status"){
         )
         {
             
-            Text(text = "Progress: ${sliderValue.toInt()}%", style = MaterialTheme.typography.labelMedium)
+            Text(text = "Progress: ${task.progress.toInt()}%", style = MaterialTheme.typography.labelMedium)
 
 
             Spacer(modifier = Modifier.weight(1f))
@@ -362,8 +377,8 @@ fun StatusSettings(modifier: Modifier = Modifier, status:String = "No Status"){
                     .width(150.dp)
                     .height(40.dp),
 
-                value = sliderValue,
-                onValueChange = { sliderValue = it },
+                value = task.progress,
+                onValueChange = { onProgressChange},
                 valueRange = 0f..100f,
 
                 colors = SliderDefaults.colors(
@@ -380,13 +395,13 @@ fun StatusSettings(modifier: Modifier = Modifier, status:String = "No Status"){
         Row(
             verticalAlignment = Alignment.CenterVertically
         ){
-            Text(text = "$Numericvalue Day Streak", style = MaterialTheme.typography.labelMedium)
+            Text(text = "${task.streak} Day Streak", style = MaterialTheme.typography.labelMedium)
 
             Spacer(modifier = Modifier.weight(1f))
 
             NumericCounter(
-                value = Numericvalue,
-                onValueChange = {Numericvalue = it}
+                value =task.streak,
+                onValueChange = {onStreakChange}
             )
         }
 
@@ -440,5 +455,68 @@ fun ProgressPreview() {
 
 
 
+fun DynamicLabel(task: TaskState): String{
+    var labelName = when(task.TaskStatus.Name){
+        "In Progress" -> "${task.progress.toInt()}% done"
+        "Streak" -> "${task.streak} 🔥"
+        "Completed" -> "✅"
+        else -> "No Status"
+    }
 
+    return labelName
+}
+
+
+
+
+
+
+
+val Pen: ImageVector
+    get() {
+        if (_Pen != null) return _Pen!!
+
+        _Pen = ImageVector.Builder(
+            name = "Pen",
+            defaultWidth = 16.dp,
+            defaultHeight = 16.dp,
+            viewportWidth = 16f,
+            viewportHeight = 16f
+        ).apply {
+            path(
+                fill = SolidColor(Color.Black)
+            ) {
+                moveToRelative(13.498f, 0.795f)
+                lineToRelative(0.149f, -0.149f)
+                arcToRelative(1.207f, 1.207f, 0f, true, true, 1.707f, 1.708f)
+                lineToRelative(-0.149f, 0.148f)
+                arcToRelative(1.5f, 1.5f, 0f, false, true, -0.059f, 2.059f)
+                lineTo(4.854f, 14.854f)
+                arcToRelative(0.5f, 0.5f, 0f, false, true, -0.233f, 0.131f)
+                lineToRelative(-4f, 1f)
+                arcToRelative(0.5f, 0.5f, 0f, false, true, -0.606f, -0.606f)
+                lineToRelative(1f, -4f)
+                arcToRelative(0.5f, 0.5f, 0f, false, true, 0.131f, -0.232f)
+                lineToRelative(9.642f, -9.642f)
+                arcToRelative(0.5f, 0.5f, 0f, false, false, -0.642f, 0.056f)
+                lineTo(6.854f, 4.854f)
+                arcToRelative(0.5f, 0.5f, 0f, true, true, -0.708f, -0.708f)
+                lineTo(9.44f, 0.854f)
+                arcTo(1.5f, 1.5f, 0f, false, true, 11.5f, 0.796f)
+                arcToRelative(1.5f, 1.5f, 0f, false, true, 1.998f, -0.001f)
+                moveToRelative(-0.644f, 0.766f)
+                arcToRelative(0.5f, 0.5f, 0f, false, false, -0.707f, 0f)
+                lineTo(1.95f, 11.756f)
+                lineToRelative(-0.764f, 3.057f)
+                lineToRelative(3.057f, -0.764f)
+                lineTo(14.44f, 3.854f)
+                arcToRelative(0.5f, 0.5f, 0f, false, false, 0f, -0.708f)
+                close()
+            }
+        }.build()
+
+        return _Pen!!
+    }
+
+private var _Pen: ImageVector? = null
 
