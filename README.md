@@ -3,9 +3,13 @@
 
 ## Done:
 1. UI
+2. Logic
 
 
 ## Todo:
-1. Logic (ViewModel??)
 2. Enhance UI
 3. Testing
+
+
+## Bugs
+1. Streak and Progress Bar Bugs
