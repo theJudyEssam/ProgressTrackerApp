@@ -11,11 +11,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -37,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -75,7 +80,10 @@ import com.example.progress_tracker.ui.theme.Pen
 @Composable
 fun ProgressApp(modifier: Modifier = Modifier){ //Main Screen
     Column(
-        modifier = Modifier.padding(20.dp)
+        modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+            .padding(top = 60.dp)
     ){
         NewTaskSection()
         TasksList() }
@@ -100,7 +108,7 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
                 imageVector = Pen, contentDescription = null,
                 modifier = Modifier
                     .size(100.dp)
-                    .padding(16.dp),
+                    .padding(20.dp),
             )
 
             Text(
@@ -315,7 +323,15 @@ fun TaskItem(modifier: Modifier = Modifier,
 @Composable
 fun ProgressPreview() {
     ProgressTrackerTheme {
-        ProgressApp()
+        Scaffold(
+            topBar = { NavBar() },
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets.systemBars,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.systemBars.asPaddingValues())
+        ) { innerPadding ->
+            ProgressApp( modifier = Modifier.padding((innerPadding)))
+        }
     }
 }
 
