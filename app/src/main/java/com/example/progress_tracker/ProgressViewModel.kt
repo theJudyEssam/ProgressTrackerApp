@@ -1,10 +1,6 @@
 package com.example.progress_tracker
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +24,7 @@ enum class Status(var Name:String, var color: Color)
 }
 
 
-data class TaskState
+data class TaskState  // Holds state of each task
     (
     var TaskId: Int =  0,
     var TaskName:String = "",
@@ -39,9 +35,14 @@ data class TaskState
     )
 
 class ProgressViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(TaskState())
-    val uiState: StateFlow<TaskState> = _uiState.asStateFlow()
+//    private val _uiState = MutableStateFlow(TaskState())
+//    val uiState: StateFlow<TaskState> = _uiState.asStateFlow()
 
+
+
+    // State of dialog
+    // its generally recommened to keep UI-related states like animation/visibility within composables
+    // but I wanted to be more familiar with Viewmode;
     var _showDialog = MutableStateFlow(false)
     val showDialog: StateFlow<Boolean>  = _showDialog.asStateFlow()
     fun DialogTrue(){
@@ -69,7 +70,6 @@ class ProgressViewModel : ViewModel() {
     fun setTaskInput(name:String){
         _taskInput.value = name
     }
-
     fun cleartaskInput(){
         _taskInput.value = ""
     }
@@ -90,8 +90,8 @@ class ProgressViewModel : ViewModel() {
 
 
     // this shall hold our current status
-    private var _Status = MutableStateFlow(Status.No_status)
-    val status: StateFlow<Status> = _Status.asStateFlow()
+//    private var _Status = MutableStateFlow(Status.No_status)
+//    val status: StateFlow<Status> = _Status.asStateFlow()
 
     fun setStatus(status: Status, task: TaskState){
             val index = _taskList.indexOf(task)
@@ -115,14 +115,12 @@ class ProgressViewModel : ViewModel() {
             _taskList[index] = task.copy(progress = progress)
         }
     }
-
     fun editTask(newName: String, task:TaskState){
         val index = _taskList.indexOf(task)
         if(index >= 0){
             _taskList[index] = task.copy(TaskName =  newName)
         }
     }
-
     fun deleteTask(task:TaskState){
         _taskList.remove(task)
     }
@@ -130,7 +128,3 @@ class ProgressViewModel : ViewModel() {
 }
 
 
-// This will be for the Tasks Logic
-class TaskViewModel: ViewModel(){
-
-}

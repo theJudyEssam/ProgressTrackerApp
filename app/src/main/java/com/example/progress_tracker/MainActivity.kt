@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun NavBar(){
     CenterAlignedTopAppBar(
-        title = { Text("Habit Tracker.io") }
+        title = { Text("Progress Tracker.io") }
     )
 }
 
@@ -56,5 +56,17 @@ fun NavBar(){
 @Composable
 fun GreetingPreview() {
     ProgressTrackerTheme {
+
+        Scaffold(
+            topBar = { NavBar() },
+            contentWindowInsets = androidx.compose.foundation.layout.WindowInsets.systemBars,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(WindowInsets.systemBars.asPaddingValues())
+        ) { innerPadding ->
+            ProgressApp( modifier = Modifier.padding((innerPadding)))
+        }
+
+
     }
 }

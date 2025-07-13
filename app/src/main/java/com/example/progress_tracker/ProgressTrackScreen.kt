@@ -53,6 +53,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,8 +89,8 @@ fun ProgressApp(modifier: Modifier = Modifier){ //Main Screen
             .padding(top = 60.dp)
     ){
         NewTaskSection()
-        TasksList() }
-}
+        TasksList()
+    }}
 
 
 @SuppressLint("SuspiciousIndentation")  // there was an error that i didnt understand but this fixed it
@@ -130,7 +131,7 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
             if(showDialog.value){
                 NewTaskDialog(
                     onDismissRequest = {gameModel.DialogFalse()},
-                    onConfirmation = {
+                    onConfirmation = { // adds the task, clears the field, and closes dialog
                         gameModel.addToDo(userInput.value)
                         gameModel.cleartaskInput()
                         gameModel.DialogFalse()},
@@ -141,66 +142,54 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
         }
 }
 
-//Alert for new task
+
 @Composable
-fun NewTaskDialog(
+fun NewTaskDialog(  //Alert for new task
     onDismissRequest: () -> Unit,
     onConfirmation: () -> Unit,
     userValue:String,
     OnValueChange: (String) -> Unit,
     label:String = "Enter your todo",
     confirmButton:String = "Add Task",
-    dismissButton:String = "Nevermind"
+    dismissButton:String = "Nevermind!"
 ) {
     AlertDialog(
         title = { Text(label) },
         text = {
-            //! Major Bug Alert: for some reason the textfield doesnt write
-            TextField(
+            TextField (
                 value = userValue,
                 onValueChange = OnValueChange
             )
         },
-        onDismissRequest = {
-            onDismissRequest()
-        },
+        onDismissRequest = { onDismissRequest() },
         confirmButton = {
             TextButton(
-                onClick = {
-                    onConfirmation()
-
-                }
+                onClick = { onConfirmation() }
             ) {
                 Text(confirmButton)
-            }
+              }
         },
         dismissButton = {
             TextButton(
-                onClick = {
-                    onDismissRequest()
-                }
+                onClick = { onDismissRequest() }
             ) {
                 Text(dismissButton)
-            }
+              }
         }
     )
 }
 
 
-// this part will contain the tasks, a LazyColumn of ListItems
+
 @Composable
-fun TasksList(gameModel: ProgressViewModel = viewModel()){
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ){
+fun TasksList(gameModel: ProgressViewModel = viewModel()){ // this part will contain the tasks, a LazyColumn of TaskItem Composables
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)){
         val TaskList = gameModel.taskList
         items(TaskList){ todo ->
             TaskItem(
                 task = todo,
             )
         }
-
-
     }
 }
 
@@ -209,36 +198,29 @@ fun TasksList(gameModel: ProgressViewModel = viewModel()){
 fun TaskItem(modifier: Modifier = Modifier,
              task: TaskState = TaskState(),
              gameModel: ProgressViewModel = viewModel(),
-
 ){
-
-
-
-
-    var visible by remember {mutableStateOf(false)}
-    var animatedBackgroundColor by remember {mutableStateOf(false)}
+    // UI-related states and non-UI-related states
+    var visible by rememberSaveable {mutableStateOf(false)}
+    var animatedBackgroundColor by rememberSaveable {mutableStateOf(false)}
     val editDialog = gameModel.editDialog.collectAsState()
     val userInput = gameModel.taskInput.collectAsState()
 
 
     val animatedColor by animateColorAsState(
-        if (animatedBackgroundColor) task.TaskStatus.color else Color(0xFFF1F6F5),
-        label = "color"
-    )
+        if (animatedBackgroundColor) task.TaskStatus.color else Color(0xFFF1F6F5), label = "color")
 
     
     if(editDialog.value){
         NewTaskDialog(
             onDismissRequest = {gameModel.EditDialogFalse()},
-            onConfirmation = {
+            onConfirmation = { // close dialog, edit task, and clear the input field
                 gameModel.EditDialogFalse()
                 gameModel.editTask(userInput.value, task)
                 gameModel.cleartaskInput()},
             userValue = userInput.value,
             OnValueChange = {newValue -> gameModel.setTaskInput(newValue)},
             label = "Edit your task",
-            confirmButton = "Save",
-            dismissButton = "Nevermind"
+            confirmButton = "Save"
         )
     }
 
@@ -246,17 +228,14 @@ fun TaskItem(modifier: Modifier = Modifier,
     Card(){
         Column(modifier = Modifier
             .drawBehind { drawRect(animatedColor) }
-            .padding(12.dp)
-
-        )
+            .padding(12.dp))
         {
             Row(){
                 Text(
                     text = task.TaskName,
                     modifier = Modifier
                         .weight(1f),
-                    style = MaterialTheme.typography.labelLarge
-                )
+                    style = MaterialTheme.typography.labelLarge)
 
 
                 Row(verticalAlignment = Alignment.CenterVertically){
