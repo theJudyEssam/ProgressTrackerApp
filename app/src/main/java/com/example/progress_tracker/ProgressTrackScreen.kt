@@ -271,10 +271,14 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
                     //Status settings if it exists
+
+//                    val updatedTask = gameModel.taskList.find { it.TaskId == task.TaskId } ?: task
+
                     StatusSettings(
                         status = task.TaskStatus.Name,
+                        task = task,
                         onStreakChange = {newval ->  gameModel.updateStreak(task, newval)},
-                        onProgressChange = {gameModel.updateProgress(task, it)}
+                        onProgressChange = {newval ->  gameModel.updateProgress(task, newval)}
                     )
                 }
             }
@@ -378,7 +382,7 @@ fun StatusSettings(modifier: Modifier = Modifier,
                     .height(40.dp),
 
                 value = task.progress,
-                onValueChange = { onProgressChange},
+                onValueChange = {onProgressChange(it)},
                 valueRange = 0f..100f,
 
                 colors = SliderDefaults.colors(
@@ -401,7 +405,7 @@ fun StatusSettings(modifier: Modifier = Modifier,
 
             NumericCounter(
                 value =task.streak,
-                onValueChange = {onStreakChange}
+                onValueChange = {newVal -> onStreakChange(newVal)}
             )
         }
 
