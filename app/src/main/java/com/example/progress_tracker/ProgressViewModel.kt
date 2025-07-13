@@ -50,10 +50,26 @@ class ProgressViewModel : ViewModel() {
     }
 
 
+    var _editDialog = MutableStateFlow(false)
+    val editDialog: StateFlow<Boolean> = _editDialog.asStateFlow()
+
+    fun EditDialogTrue(){
+        _editDialog.value = true
+    }
+    fun EditDialogFalse(){
+        _editDialog.value = false
+    }
+
+
+
     private var _taskInput = MutableStateFlow("")
     val taskInput: StateFlow<String> = _taskInput.asStateFlow()
     fun setTaskInput(name:String){
         _taskInput.value = name
+    }
+
+    fun cleartaskInput(){
+        _taskInput.value = ""
     }
 
 
@@ -96,6 +112,17 @@ class ProgressViewModel : ViewModel() {
         if(index >= 0){
             _taskList[index] = task.copy(progress = progress)
         }
+    }
+
+    fun editTask(newName: String, task:TaskState){
+        val index = _taskList.indexOf(task)
+        if(index >= 0){
+            _taskList[index] = task.copy(TaskName =  newName)
+        }
+    }
+
+    fun deleteTask(task:TaskState){
+        _taskList.remove(task)
     }
 
 }
