@@ -3,6 +3,7 @@ import android.R.attr.text
 import android.R.id.content
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -55,6 +56,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -96,7 +98,8 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
 
     // states from ViewModel
     val userInput = gameModel.taskInput.collectAsState()
-    val showDialog = gameModel.showDialog.collectAsState()
+    val showDialog = gameModel.showDialog.collectAsState()  // I read that it is better to keep UI related state in the
+    //UI, but i put showDialog and editShowDialog in the ViewModel as a way to practice ViewModels.
 
 
         Column(
@@ -212,9 +215,16 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
 
-    var visible by remember {mutableStateOf(false)} // will change later
+    var visible by remember {mutableStateOf(false)}
+    var animatedBackgroundColor by remember {mutableStateOf(false)}
     val editDialog = gameModel.editDialog.collectAsState()
     val userInput = gameModel.taskInput.collectAsState()
+
+
+    val animatedColor by animateColorAsState(
+        if (animatedBackgroundColor) task.TaskStatus.color else Color(0xFFF1F6F5),
+        label = "color"
+    )
 
     
     if(editDialog.value){
@@ -234,7 +244,11 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
     Card(){
-        Column(modifier = Modifier.padding(12.dp))
+        Column(modifier = Modifier
+            .drawBehind { drawRect(animatedColor) }
+            .padding(12.dp)
+
+        )
         {
             Row(){
                 Text(
@@ -297,13 +311,8 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
                         Spacer(modifier = Modifier.weight(1f))
-                        DropDown(modifier = Modifier.weight(1f), task = task)
-                    }
+                        DropDown(modifier = Modifier.weight(1f), task = task, onAnimate = {animatedBackgroundColor = !animatedBackgroundColor}) }
 
-
-                    //Status settings if it exists
-
-//                    val updatedTask = gameModel.taskList.find { it.TaskId == task.TaskId } ?: task
 
                     StatusSettings(
                         status = task.TaskStatus.Name,

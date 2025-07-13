@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.compose.ui.graphics.Color
+
 
 
 
@@ -17,12 +19,12 @@ import kotlinx.coroutines.flow.asStateFlow
 * dont put values that arent global to all instances in the enum
 * cuz an enum is basically like a singleton
 * */
-enum class Status(var Name:String)
+enum class Status(var Name:String, var color: Color)
 {
-    No_status("No Status"),
-    Completed("Completed"),
-    In_Progress("In Progress"),
-    Streak("Streak")
+    No_status("No Status", Color(0xFFF1F6F5)),
+    Completed("Completed", Color(0xFFD3ECCD)),
+    In_Progress("In Progress", Color(0xFFC5D3E8)),
+    Streak("Streak", Color(0xFFFFC107))
 }
 
 

@@ -42,7 +42,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun DropDown(modifier: Modifier = Modifier,
              gameModel: ProgressViewModel = viewModel(),
-             task: TaskState = TaskState()
+             task: TaskState = TaskState(),
+             onAnimate : () -> Unit
 ){
 
     var mExpanded by remember { mutableStateOf(false) }
@@ -92,6 +93,7 @@ fun DropDown(modifier: Modifier = Modifier,
                         text = { Text(text = status.Name, style = MaterialTheme.typography.labelMedium) },
                         onClick = {
                             gameModel.setStatus(status, task)
+                            onAnimate()
                             mExpanded = false
                         }
                     )
