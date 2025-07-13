@@ -7,9 +7,6 @@
 
 
 ## Todo:
-2. Enhance UI
 3. Testing
 
-
-## Bugs
-1. Streak and Progress Bar Bugs
+=
