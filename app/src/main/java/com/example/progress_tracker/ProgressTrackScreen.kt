@@ -1,50 +1,34 @@
 package com.example.progress_tracker
-import android.R.attr.text
-import android.R.id.content
 import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -58,25 +42,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.window.DialogProperties
 import com.example.progress_tracker.ui.theme.ProgressTrackerTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.vector.path
-import androidx.compose.ui.unit.dp
 import com.example.progress_tracker.ui.theme.Pen
 
 
@@ -99,7 +71,7 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
 
     // states from ViewModel
     val userInput = gameModel.taskInput.collectAsState()
-    val showDialog = gameModel.showDialog.collectAsState()  // I read that it is better to keep UI related state in the
+    val showDialog = gameModel.showTaskDialog.collectAsState()  // I read that it is better to keep UI related state in the
     //UI, but i put showDialog and editShowDialog in the ViewModel as a way to practice ViewModels.
 
 
@@ -122,7 +94,7 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
                 modifier = Modifier.padding(10.dp))
 
             Button(
-                onClick = { gameModel.DialogTrue() },
+                onClick = { gameModel.showTaskDialogTrue() },
                 modifier = Modifier.fillMaxWidth()
             ){Text("Add new task")}
 
@@ -130,11 +102,11 @@ fun NewTaskSection(gameModel: ProgressViewModel = viewModel()){
             // trigger for the dialog prompting new task
             if(showDialog.value){
                 NewTaskDialog(
-                    onDismissRequest = {gameModel.DialogFalse()},
+                    onDismissRequest = {gameModel.showTaskDialogFalse()},
                     onConfirmation = { // adds the task, clears the field, and closes dialog
                         gameModel.addToDo(userInput.value)
                         gameModel.cleartaskInput()
-                        gameModel.DialogFalse()},
+                        gameModel.showTaskDialogFalse()},
                     userValue = userInput.value,
                     OnValueChange = { newValue -> gameModel.setTaskInput(newValue)}
                 )
@@ -184,8 +156,8 @@ fun NewTaskDialog(  //Alert for new task
 @Composable
 fun TasksList(gameModel: ProgressViewModel = viewModel()){ // this part will contain the tasks, a LazyColumn of TaskItem Composables
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)){
-        val TaskList = gameModel.taskList
-        items(TaskList){ todo ->
+        val TaskList = gameModel.taskMap
+        items(TaskList.values.toList()){ todo ->
             TaskItem(
                 task = todo,
             )
@@ -202,19 +174,19 @@ fun TaskItem(modifier: Modifier = Modifier,
     // UI-related states and non-UI-related states
     var visible by rememberSaveable {mutableStateOf(false)}
     var animatedBackgroundColor by rememberSaveable {mutableStateOf(false)}
-    val editDialog = gameModel.editDialog.collectAsState()
+    val editDialog = gameModel.showEditDialog.collectAsState()
     val userInput = gameModel.taskInput.collectAsState()
 
 
     val animatedColor by animateColorAsState(
-        if (animatedBackgroundColor) task.TaskStatus.color else Color(0xFFF1F6F5), label = "color")
+        if (animatedBackgroundColor) task.TaskStatus.color else Status.No_status.color, label = "color")
 
     
     if(editDialog.value){
         NewTaskDialog(
-            onDismissRequest = {gameModel.EditDialogFalse()},
+            onDismissRequest = {gameModel.showEditDialogFalse()},
             onConfirmation = { // close dialog, edit task, and clear the input field
-                gameModel.EditDialogFalse()
+                gameModel.showEditDialogFalse()
                 gameModel.editTask(userInput.value, task)
                 gameModel.cleartaskInput()},
             userValue = userInput.value,
@@ -264,7 +236,7 @@ fun TaskItem(modifier: Modifier = Modifier,
                     ){
                         IconButton(
                             onClick = {
-                                gameModel.EditDialogTrue()
+                                gameModel.showEditDialogTrue()
                             },
                             modifier = Modifier
                                 .size(15.dp)
@@ -290,7 +262,7 @@ fun TaskItem(modifier: Modifier = Modifier,
 
 
                         Spacer(modifier = Modifier.weight(1f))
-                        DropDown(modifier = Modifier.weight(1f), task = task, onAnimate = {animatedBackgroundColor = !animatedBackgroundColor}) }
+                        DropDown(modifier = Modifier.weight(1f), task = task, onAnimate = {animatedBackgroundColor = true}) }
 
 
                     StatusSettings(

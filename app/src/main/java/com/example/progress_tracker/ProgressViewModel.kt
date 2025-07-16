@@ -1,6 +1,6 @@
 package com.example.progress_tracker
 
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +15,7 @@ import androidx.compose.ui.graphics.Color
 * dont put values that arent global to all instances in the enum
 * cuz an enum is basically like a singleton
 * */
-enum class Status(var Name:String, var color: Color)
+enum class Status(val Name:String, val color: Color)
 {
     No_status("No Status", Color(0xFFF1F6F5)),
     Completed("Completed", Color(0xFFD3ECCD)),
@@ -35,32 +35,28 @@ data class TaskState  // Holds state of each task
     )
 
 class ProgressViewModel : ViewModel() {
-//    private val _uiState = MutableStateFlow(TaskState())
-//    val uiState: StateFlow<TaskState> = _uiState.asStateFlow()
-
-
 
     // State of dialog
-    // its generally recommened to keep UI-related states like animation/visibility within composables
-    // but I wanted to be more familiar with Viewmode;
-    var _showDialog = MutableStateFlow(false)
-    val showDialog: StateFlow<Boolean>  = _showDialog.asStateFlow()
-    fun DialogTrue(){
-        _showDialog.value = true
+    // its generally recommended to keep UI-related states like animation/visibility within composables
+    // but I wanted to be more familiar with Viewmodels;
+    var _showTaskDialog = MutableStateFlow(false)
+    val showTaskDialog: StateFlow<Boolean>  = _showTaskDialog.asStateFlow()
+    fun showTaskDialogTrue(){
+        _showTaskDialog.value = true
     }
-    fun DialogFalse(){
-        _showDialog.value = false
+    fun showTaskDialogFalse(){
+        _showTaskDialog.value = false
     }
 
 
-    var _editDialog = MutableStateFlow(false)
-    val editDialog: StateFlow<Boolean> = _editDialog.asStateFlow()
+    var _showEditDialog = MutableStateFlow(false)
+    val showEditDialog: StateFlow<Boolean> = _showEditDialog.asStateFlow()
 
-    fun EditDialogTrue(){
-        _editDialog.value = true
+    fun showEditDialogTrue(){
+        _showEditDialog.value = true
     }
-    fun EditDialogFalse(){
-        _editDialog.value = false
+    fun showEditDialogFalse(){
+        _showEditDialog.value = false
     }
 
 
@@ -75,54 +71,43 @@ class ProgressViewModel : ViewModel() {
     }
 
 
-
-
-    private val _taskList = mutableStateListOf<TaskState>()
-    val taskList : List<TaskState> get() = _taskList
+    private val _taskMap = mutableStateMapOf<Int, TaskState>()
+    val taskMap : Map<Int,TaskState> get() = _taskMap
 
     fun addToDo(taskname:String){
-        var newTask = TaskState(
-            TaskId = _taskList.size + 1,
+        val newTask = TaskState(
+            TaskId = _taskMap.size + 1,
             TaskName = taskname
         )
-        _taskList.add(newTask)
+        _taskMap[newTask.TaskId] = newTask
     }
 
-
-    // this shall hold our current status
-//    private var _Status = MutableStateFlow(Status.No_status)
-//    val status: StateFlow<Status> = _Status.asStateFlow()
-
     fun setStatus(status: Status, task: TaskState){
-            val index = _taskList.indexOf(task)
-            if(index >= 0){
-                _taskList[index] = task.copy(TaskStatus = status)
+          if(task.TaskId >= 0){
+                _taskMap[task.TaskId] = task.copy(TaskStatus = status)
             }
     }
 
     fun updateStreak(task: TaskState, streak:Int){
-        val index = _taskList.indexOf(task)
 
-        if(index >= 0){
-            _taskList[index] = task.copy(streak = streak)
+        if(task.TaskId >= 0){
+            _taskMap[task.TaskId] = task.copy(streak = streak)
         }
     }
 
     fun updateProgress(task:TaskState, progress:Float){
-        val index = _taskList.indexOf(task)
 
-        if(index >= 0){
-            _taskList[index] = task.copy(progress = progress)
+        if(task.TaskId >= 0){
+            _taskMap[task.TaskId] = task.copy(progress = progress)
         }
     }
     fun editTask(newName: String, task:TaskState){
-        val index = _taskList.indexOf(task)
-        if(index >= 0){
-            _taskList[index] = task.copy(TaskName =  newName)
+        if(task.TaskId >= 0){
+            _taskMap[task.TaskId] = task.copy(TaskName =  newName)
         }
     }
     fun deleteTask(task:TaskState){
-        _taskList.remove(task)
+        _taskMap.remove(task.TaskId)
     }
 
 }
